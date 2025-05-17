@@ -1,7 +1,6 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
@@ -43,16 +42,12 @@ st.write("This app predicts the presence or absence of breast cancer based on 10
 st.subheader("Dataset Summary")
 st.write(data.describe())
 
-# Show plots using matplotlib
+# Show plots using Streamlit built-in functions
 st.subheader("Dataset Visualization")
-fig, ax = plt.subplots(figsize=(15, 15))
-ax.hist(data["Age"], bins=10, alpha=0.5, label='Age')
-ax.hist(data["BMI"], bins=10, alpha=0.5, label='BMI')
-ax.hist(data["Glucose"], bins=10, alpha=0.5, label='Glucose')
-ax.hist(data["Insulin"], bins=10, alpha=0.5, label='Insulin')
-ax.set_title('Distribution of Features')
-ax.legend()
-st.pyplot(fig)
+if st.sidebar.checkbox("Show Line Chart"):
+    # Create a line chart for the first 20 data points of each feature
+    line_chart_data = data.head(20)[['Age', 'BMI', 'Glucose', 'Insulin']]
+    st.line_chart(line_chart_data)
 
 # Model training and prediction
 def train_model():
