@@ -77,6 +77,3 @@ if st.sidebar.button("Train Model and Predict"):
     prediction = predict_breast_cancer(features, scaler, model)
     st.subheader("Prediction")
     st.write("The model predicts the presence of breast cancer:", "Yes" if prediction == 1 else "No")
-
-if __name__ == "__main__":
-    pass
