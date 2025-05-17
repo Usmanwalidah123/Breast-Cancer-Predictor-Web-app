@@ -7,15 +7,20 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.metrics import classification_report, confusion_matrix
 from mlxtend.plotting import plot_confusion_matrix
-import plotly.express as px
+import pickle
 
-# Load the dataset
-@st.cache
+# 使用 st.cache_data 替代 st.cache
+@st.cache_data
 def load_data():
     data = pd.read_csv("dataR2.csv")
     return data
 
-# Preprocess the data
+@st.cache_data
+def load_models():
+    scaler = pickle.load(open('scaler.pkl', 'rb'))
+    model = pickle.load(open('svm_model.pkl', 'rb'))
+    return scaler, model
+
 def preprocess_data(data):
     data["Age"] = data["Age"].astype(int)
     data["BMI"] = data["BMI"].astype(int)
@@ -29,7 +34,6 @@ def preprocess_data(data):
     data["Classification"] = data["Classification"].astype(int)
     return data
 
-# Main function to run the app
 def main():
     st.title("Breast Cancer Prediction App")
     st.write("This app visualizes the breast cancer dataset and predicts the presence or absence of breast cancer using an SVC model.")
@@ -73,24 +77,15 @@ def main():
     # Show prediction model
     if show_model:
         st.subheader("Prediction Model")
+        scaler, model = load_models()
         X = data.drop("Classification", axis=1)
         y = data["Classification"]
         X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
-        clf = SVC(kernel='rbf', C=1.0)
-        clf.fit(X_train, y_train)
-        y_pred = clf.predict(X_test)
+        X_train_scaled = scaler.transform(X_train)
+        X_test_scaled = scaler.transform(X_test)
 
-        st.write("Training set score: {:.4f}".format(clf.score(X_train, y_train)))
-        st.write("Test set score: {:.4f}".format(clf.score(X_test, y_test)))
+        y_pred = model.predict(X_test_scaled)
 
-        st.write("Confusion Matrix")
-        cm = confusion_matrix(y_test, y_pred)
-        fig, ax = plot_confusion_matrix(conf_mat=cm, show_absolute=True, show_normed=True, colorbar=True)
-        st.pyplot(fig)
-
-        st.write("Classification Report")
-        st.write(classification_report(y_test, y_pred))
-
-if __name__ == "__main__":
-    main()
+        st.write("Training set score: {:.4f}".format(model.score(X_train_scaled, y_train)))
+        st.write("Test set score:
