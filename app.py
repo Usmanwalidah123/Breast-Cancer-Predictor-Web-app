@@ -1,74 +1,67 @@
 import streamlit as st
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
-from sklearn.svm import SVC
-from sklearn.preprocessing import StandardScaler
+import pickle
 
-# Load and preprocess data
-def load_data():
-    data = pd.read_csv("/content/dataR2.csv")
-    data["Age"] = data["Age"].astype(int)
-    data["BMI"] = data["BMI"].astype(int)
-    data["Glucose"] = data["Glucose"].astype(int)
-    data["Insulin"] = data["Insulin"].astype(int)
-    data["HOMA"] = data["HOMA"].astype(int)
-    data["Leptin"] = data["Leptin"].astype(int)
-    data["Adiponectin"] = data["Adiponectin"].astype(int)
-    data["Resistin"] = data["Resistin"].astype(int)
-    data["MCP.1"] = data["MCP.1"].astype(int)
-    data["Classification"] = data["Classification"].astype(int)
-    return data
-
-data = load_data()
-
-# Sidebar for user input
-st.sidebar.header("Input Features")
-age = st.sidebar.slider("Age", 20, 70, 40)
-bmi = st.sidebar.slider("BMI", 10, 50, 25)
-glucose = st.sidebar.slider("Glucose", 0, 500, 100)
-insulin = st.sidebar.slider("Insulin", 0, 1000, 100)
-homa = st.sidebar.slider("HOMA", 0, 100, 25)
-leptin = st.sidebar.slider("Leptin", 0, 100, 50)
-adiponectin = st.sidebar.slider("Adiponectin", 0, 100, 50)
-resistin = st.sidebar.slider("Resistin", 0, 100, 50)
-mcp1 = st.sidebar.slider("MCP.1", 0, 100, 50)
-
-# Main page
-st.title("Breast Cancer Prediction App")
-st.write("This app predicts the presence or absence of breast cancer based on 10 quantitative predictors.")
-
-# Show data summary
-st.subheader("Dataset Summary")
-st.write(data.describe())
-
-# Show plots using Streamlit built-in functions
-st.subheader("Dataset Visualization")
-if st.sidebar.checkbox("Show Line Chart"):
-    # Create a line chart for the first 20 data points of each feature
-    line_chart_data = data.head(20)[['Age', 'BMI', 'Glucose', 'Insulin']]
-    st.line_chart(line_chart_data)
-
-# Model training and prediction
-def train_model():
-    X = data.drop("Classification", axis=1)
-    y = data["Classification"]
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-    scaler = StandardScaler()
-    X_train_scaled = scaler.fit_transform(X_train)
-    X_test_scaled = scaler.transform(X_test)
-    model = SVC(kernel='rbf', C=1.0)
-    model.fit(X_train_scaled, y_train)
+# 2. Load trained SVC model and scaler
+@st.cache(allow_output_mutation=True)
+def load_model():
+    with open('scaler.pkl', 'rb') as f:
+        scaler = pickle.load(f)
+    with open('svm_model.pkl', 'rb') as f:
+        model = pickle.load(f)
     return scaler, model
 
-def predict_breast_cancer(features, scaler, model):
-    features_scaled = scaler.transform([features])
-    prediction = model.predict(features_scaled)
-    return prediction[0]
+scaler, model = load_model()
 
-if st.sidebar.button("Train Model and Predict"):
-    scaler, model = train_model()
-    features = [age, bmi, glucose, insulin, homa, leptin, adiponectin, resistin, mcp1]
-    prediction = predict_breast_cancer(features, scaler, model)
-    st.subheader("Prediction")
-    st.write("The model predicts the presence of breast cancer:", "Yes" if prediction == 1 else "No")
+# 3. Define input features
+st.title("Breast Cancer Prediction App")
+st.write("Enter patient data to predict presence of breast cancer using a trained SVM model.")
+
+# 4. Sidebar for user inputs
+st.sidebar.header('Patient Features')
+
+def user_input_features():
+    Age = st.sidebar.slider('Age (years)', 20, 75, 35)
+    BMI = st.sidebar.number_input('BMI', min_value=15.0, max_value=40.0, value=25.0)
+    Glucose = st.sidebar.number_input('Glucose', min_value=50.0, max_value=200.0, value=100.0)
+    Insulin = st.sidebar.number_input('Insulin', min_value=2.0, max_value=300.0, value=80.0)
+    HOMA = st.sidebar.number_input('HOMA', min_value=0.5, max_value=10.0, value=1.5)
+    Leptin = st.sidebar.number_input('Leptin', min_value=1.0, max_value=50.0, value=10.0)
+    Adiponectin = st.sidebar.number_input('Adiponectin', min_value=1.0, max_value=50.0, value=10.0)
+    Resistin = st.sidebar.number_input('Resistin', min_value=0.1, max_value=20.0, value=5.0)
+    MCP_1 = st.sidebar.number_input('MCP-1', min_value=10.0, max_value=500.0, value=100.0)
+    data = {
+        'Age': Age,
+        'BMI': BMI,
+        'Glucose': Glucose,
+        'Insulin': Insulin,
+        'HOMA': HOMA,
+        'Leptin': Leptin,
+        'Adiponectin': Adiponectin,
+        'Resistin': Resistin,
+        'MCP.1': MCP_1
+    }
+    features = pd.DataFrame(data, index=[0])
+    return features
+
+input_df = user_input_features()
+
+# 5. Preprocess user input
+input_scaled = scaler.transform(input_df)
+
+# 6. Predict
+prediction = model.predict(input_scaled)
+prediction_proba = model.predict_proba(input_scaled)
+
+# 7. Display results
+st.subheader('Prediction')
+pred_label = 'Breast Cancer' if prediction[0] == 1 else 'Healthy'
+st.write(pred_label)
+
+st.subheader('Prediction Probability')
+st.write(f"Healthy: {prediction_proba[0][0]:.2f}, Cancer: {prediction_proba[0][1]:.2f}")
+
+# 8. Optional: Show input data
+st.subheader('Patient Input parameters')
+st.write(input_df)
