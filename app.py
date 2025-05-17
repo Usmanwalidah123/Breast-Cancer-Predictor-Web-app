@@ -7,6 +7,7 @@ from sklearn.preprocessing import StandardScaler
 
 # Load and preprocess data
 def load_data():
+data = pd.read_csv("/content/dataR2.csv")
     data = pd.read_csv("/content/dataR2.csv")
     data["Age"] = data["Age"].astype(int)
     data["BMI"] = data["BMI"].astype(int)
@@ -21,7 +22,7 @@ def load_data():
     return data
 
 data = load_data()
-
+data = pd.read_csv("/content/dataR2.csv")
 # Sidebar for user input
 st.sidebar.header("Input Features")
 age = st.sidebar.slider("Age", 20, 70, 40)
