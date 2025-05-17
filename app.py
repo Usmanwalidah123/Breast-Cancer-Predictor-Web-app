@@ -6,13 +6,6 @@ from sklearn.model_selection import train_test_split
 from sklearn.svm import SVC
 from sklearn.preprocessing import StandardScaler
 
-# Attempt to import seaborn
-try:
-    import seaborn as sns
-except ImportError:
-    sns = None
-    st.warning("Seaborn is not installed. Some visualizations might not be available.")
-
 # Load and preprocess data
 def load_data():
     data = pd.read_csv("data.csv")
@@ -50,14 +43,16 @@ st.write("This app predicts the presence or absence of breast cancer based on 10
 st.subheader("Dataset Summary")
 st.write(data.describe())
 
-# Show plots
+# Show plots using matplotlib
 st.subheader("Dataset Visualization")
-if sns:
-    fig, ax = plt.subplots(figsize=(15, 15))
-    sns.pairplot(data, hue="Classification", vars=["Age", "Glucose", "Insulin", "HOMA"])
-    st.pyplot(fig)
-else:
-    st.write("Visualization requires Seaborn. Please install it to see the plots.")
+fig, ax = plt.subplots(figsize=(15, 15))
+ax.hist(data["Age"], bins=10, alpha=0.5, label='Age')
+ax.hist(data["BMI"], bins=10, alpha=0.5, label='BMI')
+ax.hist(data["Glucose"], bins=10, alpha=0.5, label='Glucose')
+ax.hist(data["Insulin"], bins=10, alpha=0.5, label='Insulin')
+ax.set_title('Distribution of Features')
+ax.legend()
+st.pyplot(fig)
 
 # Model training and prediction
 def train_model():
